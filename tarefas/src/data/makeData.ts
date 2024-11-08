@@ -1,32 +1,32 @@
 export type User = {
-    id: string;
+    id: number;
     tarefa: string;
-    custo: string;
-    datalimite: string;
+    custo: number;
+    datalimite: number;
     state: string;
     // outros campos...
   };
   
   export const fakeData: User[] = [
     {
-      id: '1',
+      id: 1,
       tarefa: 'John',
-      custo: 'Doe',
-      datalimite: 'john.doe@example.com',
+      custo: 10,
+      datalimite: 2021,
       state: 'Ceará',
     },
     {
-      id: '2',
+      id: 2,
       tarefa: 'Jane',
-      custo: 'Smith',
-      datalimite: 'jane.smith@example.com',
+      custo: 6,
+      datalimite: 2024,
       state: 'Rio de Janeiro',
     },
     {
-      id: '3',
+      id: 3,
       tarefa: 'Janick',
-      custo: 'Willms',
-      datalimite: 'Delfina12@gmail.com',
+      custo: 9,
+      datalimite: 2018,
       state: 'São Paulo',
     }
   ];

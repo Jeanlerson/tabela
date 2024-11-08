@@ -1,7 +1,7 @@
 "use client";
 
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import {
   MRT_EditActionButtons,
   MaterialReactTable,
@@ -32,6 +32,7 @@ import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 
 const Example = () => {
+
   const [validationErrors, setValidationErrors] = useState<
     Record<string, string | undefined>
   >({});
@@ -65,6 +66,7 @@ const Example = () => {
         header: 'Custo(R$)',
         muiEditTextFieldProps: {
           required: true,
+          type: 'number',
           error: !!validationErrors?.custo,
           helperText: validationErrors?.custo,
           //remove any previous validation errors when user focuses on the input
@@ -73,6 +75,18 @@ const Example = () => {
               ...validationErrors,
               custo: undefined,
             }),
+          inputProps: {
+            min: 0
+          },
+          onBlur: (e) => {
+            const value = parseFloat(e.target.value);
+            if (isNaN(value) || value <= 0) {
+              setValidationErrors((prevErrors) => ({
+                ...prevErrors,
+                custo: 'Custo deve ser um número maior que zero.'
+              }));
+            }
+          }
         },
       },
       {
@@ -109,8 +123,7 @@ const Example = () => {
     useUpdateUser();
   //call DELETE hook
   const { mutateAsync: deleteUser, isPending: isDeletingUser } =
-    useDeleteUser();
-
+    useDeleteUser();  
   //CREATE action
   const handleCreateUser: MRT_TableOptions<User>['onCreatingRowSave'] = async ({
     values,
@@ -156,7 +169,7 @@ const Example = () => {
     enableEditing: true,
     positionActionsColumn: 'last',
     enableBottomToolbar: false,
-    getRowId: (row) => row.id,
+    getRowId: (row) => row.tarefa,
     muiToolbarAlertBannerProps: isLoadingUsersError
       ? {
           color: 'error',
@@ -165,8 +178,8 @@ const Example = () => {
       : undefined,
     muiTableContainerProps: {
       sx: {
-        minHeight: '500px',
-      },
+        minHeight: '500px'
+      }
     },
     onCreatingRowCancel: () => setValidationErrors({}),
     onCreatingRowSave: handleCreateUser,
@@ -175,7 +188,7 @@ const Example = () => {
     //optionally customize modal content
     renderCreateRowDialogContent: ({ table, row, internalEditComponents }) => (
       <>
-        <DialogTitle variant="h3">Create New User</DialogTitle>
+        <DialogTitle variant="h3">Criar Novo Usuário</DialogTitle>
         <DialogContent
           sx={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}
         >
@@ -189,7 +202,7 @@ const Example = () => {
     //optionally customize modal content
     renderEditRowDialogContent: ({ table, row, internalEditComponents }) => (
       <>
-        <DialogTitle variant="h3">Edit User</DialogTitle>
+        <DialogTitle variant="h3">Editar Usuário</DialogTitle>
         <DialogContent
           sx={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}
         >
@@ -251,16 +264,34 @@ function useCreateUser() {
     onMutate: (newUserInfo: User) => {
       queryClient.setQueryData(
         ['users'],
+        (prevUsers: User[]) => {
+          const newId = prevUsers.length ? Math.max(...prevUsers.map(user => user.id)) + 1 : 1;
+          
+          return [
+            ...prevUsers,
+            {
+              ...newUserInfo,
+              id: newId, // Atribui um novo ID numérico
+            },
+          ];
+        },
+      );
+    },
+    /*
+    onMutate: (newUserInfo: User) => {
+      queryClient.setQueryData(
+        ['users'],
         (prevUsers: any) =>
           [
             ...prevUsers,
             {
               ...newUserInfo,
-              id: (Math.random() + 1).toString(36).substring(7),
+              id: (Math.random() + 1),
             },
           ] as User[],
       );
     },
+    */
     // onSettled: () => queryClient.invalidateQueries({ queryKey: ['users'] }), //refetch users after mutation, disabled for demo
   });
 }
@@ -303,13 +334,13 @@ function useUpdateUser() {
 function useDeleteUser() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (userId: string) => {
+    mutationFn: async (userId: number) => {
       //send api update request here
       await new Promise((resolve) => setTimeout(resolve, 1000)); //fake api call
       return Promise.resolve();
     },
     //client side optimistic update
-    onMutate: (userId: string) => {
+    onMutate: (userId: number) => {
       queryClient.setQueryData(['users'], (prevUsers: any) =>
         prevUsers?.filter((user: User) => user.id !== userId),
       );
@@ -347,6 +378,6 @@ function validateUser(user: User) {
     firstName: !validateRequired(user.tarefa)
       ? 'First Name is Required'
       : '',
-    lastName: !validateRequired(user.custo) ? 'Last Name is Required' : '',
+    lastName: !validateRequired(user.tarefa) ? 'Last Name is Required' : '',
   };
 }
