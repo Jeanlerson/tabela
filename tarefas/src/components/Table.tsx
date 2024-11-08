@@ -88,12 +88,14 @@ const Example = () => {
             }
           }
         },
+        Cell: ({cell}) => `R$ ${Number(cell.getValue()).toFixed(2)}`
       },
       {
         accessorKey: 'datalimite',
         header: 'Data Limite',
         muiEditTextFieldProps: {
           required: true,
+          type: 'date',
           error: !!validationErrors?.datalimite,
           helperText: validationErrors?.datalimite,
           //remove any previous validation errors when user focuses on the input
@@ -102,6 +104,16 @@ const Example = () => {
               ...validationErrors,
               datalimite: undefined,
             }),
+          onBlur: (e) => {
+            const value = e.target.value;
+            const date = new Date(value)
+            if(isNaN(date.getTime())) {
+              setValidationErrors((prevErros) => ({
+                ...prevErros,
+                datalimite: 'Data Limite inválida.'
+              }))
+            }
+          }
         },
       }
     ],
