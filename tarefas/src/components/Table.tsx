@@ -309,6 +309,7 @@ function useCreateUser() {
 }
 
 //READ hook (get users from api)
+/*
 function useGetUsers() {
   return useQuery<User[]>({
     queryKey: ['users'],
@@ -319,6 +320,18 @@ function useGetUsers() {
     },
     refetchOnWindowFocus: false,
   });
+}
+*/
+function useGetUsers() {
+  return useQuery({
+    queryKey: ['users'],
+    queryFn: async () => {
+      const response = await fetch('/api/datatable.ts');
+      if(!response.ok) throw new Error('Error fetching users');
+      return response.json()
+    },
+    refetchOnWindowFocus: false
+  })
 }
 
 //UPDATE hook (put user in api)
