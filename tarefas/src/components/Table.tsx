@@ -321,20 +321,25 @@ function useGetUsers() {
     refetchOnWindowFocus: false,
   });
 }
-*/
+  */
+
+
 function useGetUsers() {
   return useQuery({
     queryKey: ['users'],
     queryFn: async () => {
-      const response = await fetch('/api/datatable.ts');
-      if(!response.ok) throw new Error('Error fetching users');
-      return response.json()
+      const response = await fetch('../api/ping/');
+      if(!response.ok) {throw new Error('Error fetching users');}
+      const data = await response.json()
+      return data
     },
     refetchOnWindowFocus: false
   })
 }
 
+
 //UPDATE hook (put user in api)
+/*
 function useUpdateUser() {
   const queryClient = useQueryClient();
   return useMutation({
@@ -354,8 +359,41 @@ function useUpdateUser() {
     // onSettled: () => queryClient.invalidateQueries({ queryKey: ['users'] }), //refetch users after mutation, disabled for demo
   });
 }
+  */
+function useUpdateUser() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (user: User) => {
+      // Enviar requisição
+      const response = await fetch(`../api/ping/`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type' : 'application/json'
+        },
+        body: JSON.stringify(user)
+      });
+
+      if(!response.ok) {
+        throw new Error('Erro ao atualizar o usuário');
+      }
+
+      return response.json();
+    },
+    onMutate: (newUserInfo: User) => {
+      queryClient.setQueryData(['users'], (prevUsers: User[] | undefined) => 
+        prevUsers?.map((prevUser: User) => 
+          prevUser.id === newUserInfo.id ? newUserInfo : prevUser
+        )
+      );
+    },
+
+    onSettled: () => queryClient.invalidateQueries({ queryKey: ['users'] })
+  });
+}
 
 //DELETE hook (delete user in api)
+/*
 function useDeleteUser() {
   const queryClient = useQueryClient();
   return useMutation({
@@ -373,6 +411,38 @@ function useDeleteUser() {
     // onSettled: () => queryClient.invalidateQueries({ queryKey: ['users'] }), //refetch users after mutation, disabled for demo
   });
 }
+*/
+function useDeleteUser() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (userId: number) => {
+      //Envia requisição DELETE
+      const response = await fetch(`../api/ping/?id=${userId}`, {
+        method: 'DELETE'
+      });
+
+      if(!response.ok) {
+        throw new Error('Erro ao deletar o usuário');
+      }
+      if(response.status === 204) {
+        return
+      }
+
+      return response.json();
+    },
+
+    onMutate: (userId: Number) => {
+      queryClient.setQueryData(['users'], (prevUsers: User[] | undefined) =>
+        prevUsers?.filter((user: User) => user.id !== userId)
+      );
+    },
+
+    onSettled: () => queryClient.invalidateQueries({ queryKey: ['users'] })
+  })
+}
+
+
 //export default Example;
 
  const queryClient = new QueryClient();
