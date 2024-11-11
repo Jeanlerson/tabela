@@ -27,7 +27,7 @@ import {
   useQuery,
   useQueryClient,
 } from '@tanstack/react-query';
-import { type User, fakeData, usStates } from '@/data/makeData';
+import { type User } from '@/data/makeData';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 
@@ -168,6 +168,7 @@ const Example = () => {
 
   //DELETE action
   const openDeleteConfirmModal = (row: MRT_Row<User>) => {
+    console.log('Deleting user with id:', row.original.id);
     if (window.confirm('Are you sure you want to delete this user?')) {
       deleteUser(row.original.id);
     }
@@ -181,7 +182,7 @@ const Example = () => {
     enableEditing: true,
     positionActionsColumn: 'last',
     enableBottomToolbar: false,
-    getRowId: (row) => row.tarefa,
+    getRowId: (row) => row.id.toString(),
     muiToolbarAlertBannerProps: isLoadingUsersError
       ? {
           color: 'error',
@@ -277,7 +278,7 @@ function useCreateUser() {
       queryClient.setQueryData(
         ['users'],
         (prevUsers: User[]) => {
-          const newId = prevUsers.length ? Math.max(...prevUsers.map(user => user.id)) + 1 : 1;
+          const newId = prevUsers ? Math.max(...prevUsers.map(user => user.id)) + 1 : 1;
           
           return [
             ...prevUsers,
@@ -289,41 +290,10 @@ function useCreateUser() {
         },
       );
     },
-    /*
-    onMutate: (newUserInfo: User) => {
-      queryClient.setQueryData(
-        ['users'],
-        (prevUsers: any) =>
-          [
-            ...prevUsers,
-            {
-              ...newUserInfo,
-              id: (Math.random() + 1),
-            },
-          ] as User[],
-      );
-    },
-    */
-    // onSettled: () => queryClient.invalidateQueries({ queryKey: ['users'] }), //refetch users after mutation, disabled for demo
   });
 }
 
 //READ hook (get users from api)
-/*
-function useGetUsers() {
-  return useQuery<User[]>({
-    queryKey: ['users'],
-    queryFn: async () => {
-      //send api request here
-      await new Promise((resolve) => setTimeout(resolve, 1000)); //fake api call
-      return Promise.resolve(fakeData);
-    },
-    refetchOnWindowFocus: false,
-  });
-}
-  */
-
-
 function useGetUsers() {
   return useQuery({
     queryKey: ['users'],
@@ -339,27 +309,6 @@ function useGetUsers() {
 
 
 //UPDATE hook (put user in api)
-/*
-function useUpdateUser() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (user: User) => {
-      //send api update request here
-      await new Promise((resolve) => setTimeout(resolve, 1000)); //fake api call
-      return Promise.resolve();
-    },
-    //client side optimistic update
-    onMutate: (newUserInfo: User) => {
-      queryClient.setQueryData(['users'], (prevUsers: any) =>
-        prevUsers?.map((prevUser: User) =>
-          prevUser.id === newUserInfo.id ? newUserInfo : prevUser,
-        ),
-      );
-    },
-    // onSettled: () => queryClient.invalidateQueries({ queryKey: ['users'] }), //refetch users after mutation, disabled for demo
-  });
-}
-  */
 function useUpdateUser() {
   const queryClient = useQueryClient();
   
@@ -393,25 +342,6 @@ function useUpdateUser() {
 }
 
 //DELETE hook (delete user in api)
-/*
-function useDeleteUser() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (userId: number) => {
-      //send api update request here
-      await new Promise((resolve) => setTimeout(resolve, 1000)); //fake api call
-      return Promise.resolve();
-    },
-    //client side optimistic update
-    onMutate: (userId: number) => {
-      queryClient.setQueryData(['users'], (prevUsers: any) =>
-        prevUsers?.filter((user: User) => user.id !== userId),
-      );
-    },
-    // onSettled: () => queryClient.invalidateQueries({ queryKey: ['users'] }), //refetch users after mutation, disabled for demo
-  });
-}
-*/
 function useDeleteUser() {
   const queryClient = useQueryClient();
 
@@ -432,7 +362,7 @@ function useDeleteUser() {
       return response.json();
     },
 
-    onMutate: (userId: Number) => {
+    onMutate: (userId: number) => {
       queryClient.setQueryData(['users'], (prevUsers: User[] | undefined) =>
         prevUsers?.filter((user: User) => user.id !== userId)
       );
@@ -457,16 +387,6 @@ function useDeleteUser() {
  export default ExampleWithProviders;
 
 const validateRequired = (value: string) => !!value.length;
-
-/*
-const validateEmail = (email: string) =>
-  !!email.length &&
-  email
-    .toLowerCase()
-    .match(
-      /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/,
-    );
-*/
 
 function validateUser(user: User) {
   return {
