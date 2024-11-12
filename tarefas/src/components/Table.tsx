@@ -10,6 +10,7 @@ import {
   type MRT_Row,
   type MRT_TableOptions,
   useMaterialReactTable,
+  MRT_TableContainer
 } from 'material-react-table';
 import {
   Box,
@@ -27,7 +28,9 @@ import {
   useQuery,
   useQueryClient,
 } from '@tanstack/react-query';
-import { type User } from '@/data/makeData';
+import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
+import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
+import { type User, fakeData, fakeData as initData } from '@/data/makeData';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 
@@ -36,6 +39,33 @@ const Example = () => {
   const [validationErrors, setValidationErrors] = useState<
     Record<string, string | undefined>
   >({});
+
+  const { data: fetchedUsers = [], isError: isLoadingUsersError, isFetching: isFetchingUsers, isLoading: isLoadingUsers } = useGetUsers();
+
+  // Estado local para armazenar e atualizar a lista de usuários
+  const [data, setData] = useState<User[]>(fetchedUsers);
+
+  // Sincronizar estado `data` com `fetchedUsers` quando `fetchedUsers` mudar
+  useEffect(() => {
+    // Verifica se `fetchedUsers` é diferente do `data` antes de atualizar
+    if (JSON.stringify(data) !== JSON.stringify(fetchedUsers)) {
+      setData(fetchedUsers);
+    }
+  }, [fetchedUsers, data]);
+
+  const moveUp = (index: number) => {
+    if (index <= 0) return;
+    const newData = [...fetchedUsers];
+    [newData[index - 1], newData[index]] = [newData[index], newData[index - 1]];
+    setData(newData);
+  };
+
+  const moveDown = (index: number) => {
+    if (index >= fetchedUsers.length - 1) return;
+    const newData = [...fetchedUsers];
+    [newData[index], newData[index + 1]] = [newData[index + 1], newData[index]];
+    setData(newData);
+  };
 
   const columns = useMemo<MRT_ColumnDef<User>[]>(
     () => [
@@ -98,7 +128,6 @@ const Example = () => {
           type: 'date',
           error: !!validationErrors?.datalimite,
           helperText: validationErrors?.datalimite,
-          //remove any previous validation errors when user focuses on the input
           onFocus: () =>
             setValidationErrors({
               ...validationErrors,
@@ -114,7 +143,7 @@ const Example = () => {
               }))
             }
           }
-        },
+        }
       }
     ],
     [validationErrors],
@@ -124,12 +153,7 @@ const Example = () => {
   const { mutateAsync: createUser, isPending: isCreatingUser } =
     useCreateUser();
   //call READ hook
-  const {
-    data: fetchedUsers = [],
-    isError: isLoadingUsersError,
-    isFetching: isFetchingUsers,
-    isLoading: isLoadingUsers,
-  } = useGetUsers();
+  
   //call UPDATE hook
   const { mutateAsync: updateUser, isPending: isUpdatingUser } =
     useUpdateUser();
@@ -168,21 +192,24 @@ const Example = () => {
 
   //DELETE action
   const openDeleteConfirmModal = (row: MRT_Row<User>) => {
-    console.log('Deleting user with id:', row.original.id);
     if (window.confirm('Are you sure you want to delete this user?')) {
       deleteUser(row.original.id);
     }
   };
 
+  
   const table = useMaterialReactTable({
+    autoResetPageIndex: false,
     columns,
-    data: fetchedUsers,
+    data,
+    enableRowOrdering: true,
+    enableSorting: false,
     createDisplayMode: 'modal', //default ('row', and 'custom' are also available)
     editDisplayMode: 'modal', //default ('row', 'cell', 'table', and 'custom' are also available)
     enableEditing: true,
     positionActionsColumn: 'last',
     enableBottomToolbar: false,
-    getRowId: (row) => row.id.toString(),
+    getRowId: (row) => row.tarefa,
     muiToolbarAlertBannerProps: isLoadingUsersError
       ? {
           color: 'error',
@@ -198,6 +225,7 @@ const Example = () => {
     onCreatingRowSave: handleCreateUser,
     onEditingRowCancel: () => setValidationErrors({}),
     onEditingRowSave: handleSaveUser,
+    
     //optionally customize modal content
     renderCreateRowDialogContent: ({ table, row, internalEditComponents }) => (
       <>
@@ -225,18 +253,36 @@ const Example = () => {
           <MRT_EditActionButtons variant="text" table={table} row={row} />
         </DialogActions>
       </>
-    ),
+    ),   
     renderRowActions: ({ row, table }) => (
-      <Box sx={{ display: 'flex', gap: '1rem' }}>
+      <Box sx={{ display: 'flex', gap: '0.5rem' }}>
+        <Tooltip title="Mover para Cima">
+          <span>
+            <IconButton onClick={() => moveUp(row.index)} disabled={row.index === 0}>
+              <ArrowUpwardIcon />
+            </IconButton>
+          </span>
+        </Tooltip>
+        <Tooltip title="Mover para Baixo">
+          <span>
+            <IconButton onClick={() => moveDown(row.index)} disabled={row.index === fetchedUsers.length - 1}>
+              <ArrowDownwardIcon />
+            </IconButton>
+          </span>
+        </Tooltip>
         <Tooltip title="Edit">
-          <IconButton onClick={() => table.setEditingRow(row)}>
-            <EditIcon />
-          </IconButton>
+          <span>
+            <IconButton onClick={() => table.setEditingRow(row)}>
+              <EditIcon />
+            </IconButton>
+          </span>
         </Tooltip>
         <Tooltip title="Delete">
-          <IconButton color="error" onClick={() => openDeleteConfirmModal(row)}>
-            <DeleteIcon />
-          </IconButton>
+          <span>
+            <IconButton color="error" onClick={() => openDeleteConfirmModal(row)}>
+              <DeleteIcon />
+            </IconButton>
+          </span>
         </Tooltip>
       </Box>
     ),
@@ -251,7 +297,7 @@ const Example = () => {
 
   return (
     <>
-      <MaterialReactTable table={table} />
+      <MRT_TableContainer table={table} />
       <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
         <Button
           variant="contained"
@@ -278,8 +324,8 @@ function useCreateUser() {
       queryClient.setQueryData(
         ['users'],
         (prevUsers: User[]) => {
-          const newId = prevUsers ? Math.max(...prevUsers.map(user => user.id)) + 1 : 1;
-          
+          const newId = prevUsers.length ? Math.max(...prevUsers.map(user => user.id)) + 1 : 1;
+
           return [
             ...prevUsers,
             {
@@ -290,89 +336,77 @@ function useCreateUser() {
         },
       );
     },
+    /*
+    onMutate: (newUserInfo: User) => {
+      queryClient.setQueryData(
+        ['users'],
+        (prevUsers: any) =>
+          [
+            ...prevUsers,
+            {
+              ...newUserInfo,
+              id: (Math.random() + 1),
+            },
+          ] as User[],
+      );
+    },
+    */
+    // onSettled: () => queryClient.invalidateQueries({ queryKey: ['users'] }), //refetch users after mutation, disabled for demo
   });
 }
 
 //READ hook (get users from api)
 function useGetUsers() {
-  return useQuery({
+  return useQuery<User[]>({
     queryKey: ['users'],
     queryFn: async () => {
-      const response = await fetch('../api/ping/');
-      if(!response.ok) {throw new Error('Error fetching users');}
-      const data = await response.json()
-      return data
+      //send api request here
+      await new Promise((resolve) => setTimeout(resolve, 1000)); //fake api call
+      return Promise.resolve(initData);
     },
-    refetchOnWindowFocus: false
-  })
+    refetchOnWindowFocus: false,
+  });
 }
-
 
 //UPDATE hook (put user in api)
 function useUpdateUser() {
   const queryClient = useQueryClient();
-  
   return useMutation({
     mutationFn: async (user: User) => {
-      // Enviar requisição
-      const response = await fetch(`../api/ping/`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type' : 'application/json'
-        },
-        body: JSON.stringify(user)
-      });
-
-      if(!response.ok) {
-        throw new Error('Erro ao atualizar o usuário');
-      }
-
-      return response.json();
+      //send api update request here
+      await new Promise((resolve) => setTimeout(resolve, 1000)); //fake api call
+      return Promise.resolve();
     },
+    //client side optimistic update
     onMutate: (newUserInfo: User) => {
-      queryClient.setQueryData(['users'], (prevUsers: User[] | undefined) => 
-        prevUsers?.map((prevUser: User) => 
-          prevUser.id === newUserInfo.id ? newUserInfo : prevUser
-        )
+      queryClient.setQueryData(['users'], (prevUsers: any) =>
+        prevUsers?.map((prevUser: User) =>
+          prevUser.id === newUserInfo.id ? newUserInfo : prevUser,
+        ),
       );
     },
-
-    onSettled: () => queryClient.invalidateQueries({ queryKey: ['users'] })
+    // onSettled: () => queryClient.invalidateQueries({ queryKey: ['users'] }), //refetch users after mutation, disabled for demo
   });
 }
 
 //DELETE hook (delete user in api)
 function useDeleteUser() {
   const queryClient = useQueryClient();
-
   return useMutation({
     mutationFn: async (userId: number) => {
-      //Envia requisição DELETE
-      const response = await fetch(`../api/ping/?id=${userId}`, {
-        method: 'DELETE'
-      });
-
-      if(!response.ok) {
-        throw new Error('Erro ao deletar o usuário');
-      }
-      if(response.status === 204) {
-        return
-      }
-
-      return response.json();
+      //send api update request here
+      await new Promise((resolve) => setTimeout(resolve, 1000)); //fake api call
+      return Promise.resolve();
     },
-
+    //client side optimistic update
     onMutate: (userId: number) => {
-      queryClient.setQueryData(['users'], (prevUsers: User[] | undefined) =>
-        prevUsers?.filter((user: User) => user.id !== userId)
+      queryClient.setQueryData(['users'], (prevUsers: any) =>
+        prevUsers?.filter((user: User) => user.id !== userId),
       );
     },
-
-    onSettled: () => queryClient.invalidateQueries({ queryKey: ['users'] })
-  })
+    // onSettled: () => queryClient.invalidateQueries({ queryKey: ['users'] }), //refetch users after mutation, disabled for demo
+  });
 }
-
-
 //export default Example;
 
  const queryClient = new QueryClient();
@@ -387,6 +421,16 @@ function useDeleteUser() {
  export default ExampleWithProviders;
 
 const validateRequired = (value: string) => !!value.length;
+
+/*
+const validateEmail = (email: string) =>
+  !!email.length &&
+  email
+    .toLowerCase()
+    .match(
+      /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/,
+    );
+*/
 
 function validateUser(user: User) {
   return {

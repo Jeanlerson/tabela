@@ -6,4 +6,11 @@ export type User = {
     // outros campos...
   };
   
-  export const fakeData: User[] = [];
+  export const fakeData: User[] = [
+    {
+      id: 1,
+      tarefa: 'Varrer',
+      custo: 10,
+      datalimite: 2024
+    }
+  ];
