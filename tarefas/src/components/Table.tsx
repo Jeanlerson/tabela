@@ -30,7 +30,7 @@ import {
 } from '@tanstack/react-query';
 import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
 import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
-import { type User, fakeData, fakeData as initData } from '@/data/makeData';
+import { type Data, fakeData, fakeData as initData } from '@/data/makeData';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 
@@ -40,34 +40,34 @@ const Example = () => {
     Record<string, string | undefined>
   >({});
 
-  const { data: fetchedUsers = [], isError: isLoadingUsersError, isFetching: isFetchingUsers, isLoading: isLoadingUsers } = useGetUsers();
+  const { data: fetchedDatas = [], isError: isLoadingDatasError, isFetching: isFetchingDatas, isLoading: isLoadingDatas } = useGetTasks();
 
   // Estado local para armazenar e atualizar a lista de usuários
-  const [data, setData] = useState<User[]>(fetchedUsers);
+  const [data, setData] = useState<Data[]>(fetchedDatas);
 
   // Sincronizar estado `data` com `fetchedUsers` quando `fetchedUsers` mudar
   useEffect(() => {
     // Verifica se `fetchedUsers` é diferente do `data` antes de atualizar
-    if (JSON.stringify(data) !== JSON.stringify(fetchedUsers)) {
-      setData(fetchedUsers);
+    if (JSON.stringify(data) !== JSON.stringify(fetchedDatas)) {
+      setData(fetchedDatas);
     }
-  }, [fetchedUsers, data]);
+  }, [fetchedDatas, data]);
 
   const moveUp = (index: number) => {
     if (index <= 0) return;
-    const newData = [...fetchedUsers];
+    const newData = [...fetchedDatas];
     [newData[index - 1], newData[index]] = [newData[index], newData[index - 1]];
     setData(newData);
   };
 
   const moveDown = (index: number) => {
-    if (index >= fetchedUsers.length - 1) return;
-    const newData = [...fetchedUsers];
+    if (index >= fetchedDatas.length - 1) return;
+    const newData = [...fetchedDatas];
     [newData[index], newData[index + 1]] = [newData[index + 1], newData[index]];
     setData(newData);
   };
 
-  const columns = useMemo<MRT_ColumnDef<User>[]>(
+  const columns = useMemo<MRT_ColumnDef<Data>[]>(
     () => [
       {
         accessorKey: 'id',
@@ -76,12 +76,12 @@ const Example = () => {
         size: 80
       },
       {
-        accessorKey: 'tarefa',
+        accessorKey: 'task',
         header: 'Tarefa',
         muiEditTextFieldProps: {
           required: true,
-          error: !!validationErrors?.tarefa,
-          helperText: validationErrors?.tarefa,
+          error: !!validationErrors?.task,
+          helperText: validationErrors?.task,
           //remove any previous validation errors when user focuses on the input
           onFocus: () =>
             setValidationErrors({
@@ -92,18 +92,18 @@ const Example = () => {
         },
       },
       {
-        accessorKey: 'custo',
+        accessorKey: 'cost',
         header: 'Custo(R$)',
         muiEditTextFieldProps: {
           required: true,
           type: 'number',
-          error: !!validationErrors?.custo,
-          helperText: validationErrors?.custo,
+          error: !!validationErrors?.cost,
+          helperText: validationErrors?.cost,
           //remove any previous validation errors when user focuses on the input
           onFocus: () =>
             setValidationErrors({
               ...validationErrors,
-              custo: undefined,
+              cost: undefined,
             }),
           inputProps: {
             min: 0
@@ -113,7 +113,7 @@ const Example = () => {
             if (isNaN(value) || value <= 0) {
               setValidationErrors((prevErrors) => ({
                 ...prevErrors,
-                custo: 'Custo deve ser um número maior que zero.'
+                cost: 'Custo deve ser um número maior que zero.'
               }));
             }
           }
@@ -121,17 +121,17 @@ const Example = () => {
         Cell: ({cell}) => `R$ ${Number(cell.getValue()).toFixed(2)}`
       },
       {
-        accessorKey: 'datalimite',
+        accessorKey: 'deadline',
         header: 'Data Limite',
         muiEditTextFieldProps: {
           required: true,
           type: 'date',
-          error: !!validationErrors?.datalimite,
-          helperText: validationErrors?.datalimite,
+          error: !!validationErrors?.deadline,
+          helperText: validationErrors?.deadline,
           onFocus: () =>
             setValidationErrors({
               ...validationErrors,
-              datalimite: undefined,
+              deadline: undefined,
             }),
           onBlur: (e) => {
             const value = e.target.value;
@@ -139,7 +139,7 @@ const Example = () => {
             if(isNaN(date.getTime())) {
               setValidationErrors((prevErros) => ({
                 ...prevErros,
-                datalimite: 'Data Limite inválida.'
+                deadline: 'Data Limite inválida.'
               }))
             }
           }
@@ -150,50 +150,50 @@ const Example = () => {
   );
 
   //call CREATE hook
-  const { mutateAsync: createUser, isPending: isCreatingUser } =
-    useCreateUser();
+  const { mutateAsync: createData, isPending: isCreatingData } =
+    useCreateTask();
   //call READ hook
   
   //call UPDATE hook
-  const { mutateAsync: updateUser, isPending: isUpdatingUser } =
-    useUpdateUser();
+  const { mutateAsync: updateData, isPending: isUpdatingData } =
+    useUpdateTask();
   //call DELETE hook
-  const { mutateAsync: deleteUser, isPending: isDeletingUser } =
-    useDeleteUser();  
+  const { mutateAsync: deleteData, isPending: isDeletingData } =
+    useDeleteTask();  
   //CREATE action
-  const handleCreateUser: MRT_TableOptions<User>['onCreatingRowSave'] = async ({
+  const handleCreateData: MRT_TableOptions<Data>['onCreatingRowSave'] = async ({
     values,
     table,
   }) => {
-    const newValidationErrors = validateUser(values);
+    const newValidationErrors = validateTask(values);
     if (Object.values(newValidationErrors).some((error) => error)) {
       setValidationErrors(newValidationErrors);
       return;
     }
     setValidationErrors({});
-    await createUser(values);
+    await createData(values);
     table.setCreatingRow(null); //exit creating mode
   };
 
   //UPDATE action
-  const handleSaveUser: MRT_TableOptions<User>['onEditingRowSave'] = async ({
+  const handleSaveData: MRT_TableOptions<Data>['onEditingRowSave'] = async ({
     values,
     table,
   }) => {
-    const newValidationErrors = validateUser(values);
+    const newValidationErrors = validateTask(values);
     if (Object.values(newValidationErrors).some((error) => error)) {
       setValidationErrors(newValidationErrors);
       return;
     }
     setValidationErrors({});
-    await updateUser(values);
+    await updateData(values);
     table.setEditingRow(null); //exit editing mode
   };
 
   //DELETE action
-  const openDeleteConfirmModal = (row: MRT_Row<User>) => {
+  const openDeleteConfirmModal = (row: MRT_Row<Data>) => {
     if (window.confirm('Are you sure you want to delete this user?')) {
-      deleteUser(row.original.id);
+      deleteData(row.original.id);
     }
   };
 
@@ -209,8 +209,8 @@ const Example = () => {
     enableEditing: true,
     positionActionsColumn: 'last',
     enableBottomToolbar: false,
-    getRowId: (row) => row.tarefa,
-    muiToolbarAlertBannerProps: isLoadingUsersError
+    getRowId: (row) => row.task,
+    muiToolbarAlertBannerProps: isLoadingDatasError
       ? {
           color: 'error',
           children: 'Error loading data',
@@ -222,14 +222,14 @@ const Example = () => {
       }
     },
     onCreatingRowCancel: () => setValidationErrors({}),
-    onCreatingRowSave: handleCreateUser,
+    onCreatingRowSave: handleCreateData,
     onEditingRowCancel: () => setValidationErrors({}),
-    onEditingRowSave: handleSaveUser,
+    onEditingRowSave: handleSaveData,
     
     //optionally customize modal content
     renderCreateRowDialogContent: ({ table, row, internalEditComponents }) => (
       <>
-        <DialogTitle variant="h3">Criar Novo Usuário</DialogTitle>
+        <DialogTitle variant="h3">Criar Nova Tarefa</DialogTitle>
         <DialogContent
           sx={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}
         >
@@ -243,7 +243,7 @@ const Example = () => {
     //optionally customize modal content
     renderEditRowDialogContent: ({ table, row, internalEditComponents }) => (
       <>
-        <DialogTitle variant="h3">Editar Usuário</DialogTitle>
+        <DialogTitle variant="h3">Editar Tarefa</DialogTitle>
         <DialogContent
           sx={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}
         >
@@ -265,7 +265,7 @@ const Example = () => {
         </Tooltip>
         <Tooltip title="Mover para Baixo">
           <span>
-            <IconButton onClick={() => moveDown(row.index)} disabled={row.index === fetchedUsers.length - 1}>
+            <IconButton onClick={() => moveDown(row.index)} disabled={row.index === fetchedDatas.length - 1}>
               <ArrowDownwardIcon />
             </IconButton>
           </span>
@@ -288,10 +288,10 @@ const Example = () => {
     ),
 
     state: {
-      isLoading: isLoadingUsers,
-      isSaving: isCreatingUser || isUpdatingUser || isDeletingUser,
-      showAlertBanner: isLoadingUsersError,
-      showProgressBars: isFetchingUsers,
+      isLoading: isLoadingDatas,
+      isSaving: isCreatingData || isUpdatingData || isDeletingData,
+      showAlertBanner: isLoadingDatasError,
+      showProgressBars: isFetchingDatas,
     },
   });
 
@@ -303,7 +303,7 @@ const Example = () => {
           variant="contained"
           onClick={() => table.setCreatingRow(true)}
         >
-          Criar Novo Usuário
+          Criar Nova Tarefa
         </Button>
       </Box>
     </>
@@ -311,54 +311,38 @@ const Example = () => {
 };
 
 //CREATE hook (post new user to api)
-function useCreateUser() {
+function useCreateTask() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (user: User) => {
+    mutationFn: async (task: Data) => {
       //send api update request here
       await new Promise((resolve) => setTimeout(resolve, 1000)); //fake api call
       return Promise.resolve();
     },
     //client side optimistic update
-    onMutate: (newUserInfo: User) => {
+    onMutate: (newTaskInfo: Data) => {
       queryClient.setQueryData(
-        ['users'],
-        (prevUsers: User[]) => {
-          const newId = prevUsers.length ? Math.max(...prevUsers.map(user => user.id)) + 1 : 1;
+        ['tasks'],
+        (prevTasks: Data[]) => {
+          const newId = prevTasks.length ? Math.max(...prevTasks.map(task => task.id)) + 1 : 1;
 
           return [
-            ...prevUsers,
+            ...prevTasks,
             {
-              ...newUserInfo,
+              ...newTaskInfo,
               id: newId, // Atribui um novo ID numérico
             },
           ];
         },
       );
     },
-    /*
-    onMutate: (newUserInfo: User) => {
-      queryClient.setQueryData(
-        ['users'],
-        (prevUsers: any) =>
-          [
-            ...prevUsers,
-            {
-              ...newUserInfo,
-              id: (Math.random() + 1),
-            },
-          ] as User[],
-      );
-    },
-    */
-    // onSettled: () => queryClient.invalidateQueries({ queryKey: ['users'] }), //refetch users after mutation, disabled for demo
   });
 }
 
 //READ hook (get users from api)
-function useGetUsers() {
-  return useQuery<User[]>({
-    queryKey: ['users'],
+function useGetTasks() {
+  return useQuery<Data[]>({
+    queryKey: ['tasks'],
     queryFn: async () => {
       //send api request here
       await new Promise((resolve) => setTimeout(resolve, 1000)); //fake api call
@@ -369,19 +353,19 @@ function useGetUsers() {
 }
 
 //UPDATE hook (put user in api)
-function useUpdateUser() {
+function useUpdateTask() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (user: User) => {
+    mutationFn: async (task: Data) => {
       //send api update request here
       await new Promise((resolve) => setTimeout(resolve, 1000)); //fake api call
       return Promise.resolve();
     },
     //client side optimistic update
-    onMutate: (newUserInfo: User) => {
-      queryClient.setQueryData(['users'], (prevUsers: any) =>
-        prevUsers?.map((prevUser: User) =>
-          prevUser.id === newUserInfo.id ? newUserInfo : prevUser,
+    onMutate: (newTaskInfo: Data) => {
+      queryClient.setQueryData(['tasks'], (prevTasks: any) =>
+        prevTasks?.map((prevTask: Data) =>
+          prevTask.id === newTaskInfo.id ? newTaskInfo : prevTask,
         ),
       );
     },
@@ -390,18 +374,18 @@ function useUpdateUser() {
 }
 
 //DELETE hook (delete user in api)
-function useDeleteUser() {
+function useDeleteTask() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (userId: number) => {
+    mutationFn: async (taskId: number) => {
       //send api update request here
       await new Promise((resolve) => setTimeout(resolve, 1000)); //fake api call
       return Promise.resolve();
     },
     //client side optimistic update
-    onMutate: (userId: number) => {
-      queryClient.setQueryData(['users'], (prevUsers: any) =>
-        prevUsers?.filter((user: User) => user.id !== userId),
+    onMutate: (taskId: number) => {
+      queryClient.setQueryData(['tasks'], (prevTasks: any) =>
+        prevTasks?.filter((task: Data) => task.id !== taskId),
       );
     },
     // onSettled: () => queryClient.invalidateQueries({ queryKey: ['users'] }), //refetch users after mutation, disabled for demo
@@ -422,21 +406,11 @@ function useDeleteUser() {
 
 const validateRequired = (value: string) => !!value.length;
 
-/*
-const validateEmail = (email: string) =>
-  !!email.length &&
-  email
-    .toLowerCase()
-    .match(
-      /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/,
-    );
-*/
-
-function validateUser(user: User) {
+function validateTask(task: Data) {
   return {
-    firstName: !validateRequired(user.tarefa)
+    firstName: !validateRequired(task.task)
       ? 'First Name is Required'
       : '',
-    lastName: !validateRequired(user.tarefa) ? 'Last Name is Required' : '',
+    lastName: !validateRequired(task.task) ? 'Last Name is Required' : '',
   };
 }

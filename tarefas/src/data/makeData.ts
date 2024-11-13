@@ -1,16 +1,16 @@
-export type User = {
+export type Data = {
     id: number;
-    tarefa: string;
-    custo: number;
-    datalimite: number;
+    task: string;
+    cost: number;
+    deadline: number;
     // outros campos...
   };
   
-  export const fakeData: User[] = [
+  export const fakeData: Data[] = [
     {
       id: 1,
-      tarefa: 'Varrer',
-      custo: 10,
-      datalimite: 2024
+      task: 'Varrer',
+      cost: 10,
+      deadline: 2024
     }
   ];
